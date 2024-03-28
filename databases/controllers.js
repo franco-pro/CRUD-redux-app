@@ -13,6 +13,20 @@ export async function getUsers(req, res) {
   }
 }
 
+// GET::http://localhost:3000/api/users/{userId}
+export async function getUser(req, res) {
+  try {
+    const { userId } = req.query;
+    if (userId) {
+      const user = await User.findById(userId);
+      return res.status(200).json(user);
+    }
+    res.status(404).json({ error: "User not selected" });
+  } catch (error) {
+    res.status(404).json({ error });
+  }
+}
+
 // POST::http://localhost:3000/api/users
 export async function postUsers(req, res) {
   try {
