@@ -2,6 +2,8 @@ import { useReducer } from "react";
 import { BiPlus } from "react-icons/bi";
 import { Bug } from "./bug";
 import { Success } from "./success";
+import { useQueryClient, useMutation } from "react-query"; //useMutation is a hook from react-query that is used call api and mutate data
+import { getUsersApi, postUserApi } from "@/lib/helper";
 
 export const AddUserForm = () => {
   const formReducer = (state, e) => {
@@ -12,15 +14,34 @@ export const AddUserForm = () => {
   };
 
   const [formData, setFormData] = useReducer(formReducer, {}); // useReducer is a hook that is used for state management
-
+  const querylient = useQueryClient(); //useQueryClient is a hook from react-query that is used to get the data from cache
+  const addMutation = useMutation(postUserApi, {
+    onSuccess: () => {
+      querylient.prefetchQuery("user", getUsersApi);
+    },
+  });
   const handleSumit = (e) => {
     e.preventDefault();
 
     if (Object.keys(formData).length == 0)
-      return console.log("Don't have form data");
-    console.log(formData);
+      return <div className=" text-rose-500">Don't have form data</div>;
+    let { firstname, lastname, email, salary, date, status } = formData; //we must combine firsname and lastname because, in the schemas, it represent only name attribut
+    const model = {
+      name: `${firstname} ${lastname}`,
+      avatar: `https://randomuser.me/api/portraits/men/${Math.floor(
+        Math.random() * 100
+      )}.jpg`,
+      email,
+      salary,
+      date,
+      status: status ?? "Active",
+    };
+    addMutation.mutate(model);
   };
-  if (Object.keys(formData).length > 0) return <Success message={"added"} />;
+
+  if (addMutation.isLoading) return <div>Loading...</div>;
+  if (addMutation.isError) return <Bug message={addMutation.error.message} />; //if there is an error, it will show the error message
+  if (addMutation.isSuccess) return <Success message={"Added successfully"} />;
 
   return (
     <form
@@ -77,7 +98,7 @@ export const AddUserForm = () => {
         <div className="form-check">
           <input
             type="radio"
-            value={"active"}
+            value={"Active"}
             id="radioDefault1"
             name="status"
             onChange={setFormData}
@@ -93,7 +114,7 @@ export const AddUserForm = () => {
         <div className="form-check">
           <input
             type="radio"
-            value={"inactive"}
+            value={"Inactive"}
             id="radioDefault2"
             name="status"
             onChange={setFormData}
